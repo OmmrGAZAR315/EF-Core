@@ -8,6 +8,7 @@ public class BookConfiguration: IEntityTypeConfiguration<Book>
 {
     public void Configure(EntityTypeBuilder<Book> builder)
     {
-        throw new NotImplementedException();
+        
+        builder.Property(b=>b.Price).HasPrecision(10,2);
     }
 }

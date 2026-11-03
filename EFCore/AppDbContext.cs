@@ -1,9 +1,13 @@
+using EFCore.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace EFCore;
 
 public class AppDbContext : DbContext
 {
+    public DbSet<Book> Books => Set<Book>();
+    public DbSet<Author> Authors => Set<Author>();
+    public DbSet<Category> Categories => Set<Category>();
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         optionsBuilder.UseSqlServer(
