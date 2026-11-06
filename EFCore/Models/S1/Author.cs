@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace EFCore.Models;
+namespace EFCore.Models.S1;
 
 public class Author
 {

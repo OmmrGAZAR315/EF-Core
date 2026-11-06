@@ -22,43 +22,30 @@ namespace EFCore.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("EFCore.Models.Author", b =>
+            modelBuilder.Entity("EFCore.Models.S2.Attendee", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Bio")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<DateTime>("DOB")
-                        .HasColumnType("datetime2");
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
-                    b.Property<string>("FirstName")
+                    b.Property<string>("FullName")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("LastName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
 
                     b.HasKey("Id");
 
-                    b.ToTable("Authors");
+                    b.ToTable("Attendees");
                 });
 
-            modelBuilder.Entity("EFCore.Models.Book", b =>
+            modelBuilder.Entity("EFCore.Models.S2.Badge", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -66,35 +53,30 @@ namespace EFCore.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("ISBN")
-                        .IsRequired()
-                        .HasMaxLength(13)
-                        .HasColumnType("nvarchar(13)");
-
-                    b.Property<bool>("IsInStock")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("PageCount")
+                    b.Property<int>("AttendeeId")
                         .HasColumnType("int");
 
-                    b.Property<decimal>("Price")
-                        .HasPrecision(10, 2)
-                        .HasColumnType("decimal(10,2)");
+                    b.Property<int>("BadgeTier")
+                        .HasColumnType("int");
 
-                    b.Property<DateTime>("PublishYear")
+                    b.Property<DateTime>("IssuedOn")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                    b.Property<int>("Number")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
-                    b.ToTable("Books");
+                    b.HasIndex("AttendeeId")
+                        .IsUnique();
+
+                    b.HasIndex("Number")
+                        .IsUnique();
+
+                    b.ToTable("Badges");
                 });
 
-            modelBuilder.Entity("EFCore.Models.Category", b =>
+            modelBuilder.Entity("EFCore.Models.S2.Event", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -104,10 +86,44 @@ namespace EFCore.Migrations
 
                     b.Property<string>("Description")
                         .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
+                        .HasColumnType("nvarchar(max)");
 
-                    b.Property<bool>("IsActivate")
+                    b.Property<DateTime?>("EndDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("MaxAttendees")
+                        .HasColumnType("int");
+
+                    b.Property<int>("OrganizerId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrganizerId");
+
+                    b.ToTable("Events");
+                });
+
+            modelBuilder.Entity("EFCore.Models.S2.Organizer", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("CompanyName")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<bool>("IsVerified")
                         .HasColumnType("bit");
 
                     b.Property<string>("Name")
@@ -117,7 +133,122 @@ namespace EFCore.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Categories");
+                    b.ToTable("EventOrganizers");
+                });
+
+            modelBuilder.Entity("EFCore.Models.S2.OrganizerProfile", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Bio")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Link")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Logo")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("OrganizerId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrganizerId")
+                        .IsUnique();
+
+                    b.ToTable("OrganizerProfiles");
+                });
+
+            modelBuilder.Entity("EFCore.Models.S2.Attendee", b =>
+                {
+                    b.OwnsOne("EFCore.Models.S2.Address", "Address", b1 =>
+                        {
+                            b1.Property<int>("AttendeeId")
+                                .HasColumnType("int");
+
+                            b1.Property<string>("City")
+                                .IsRequired()
+                                .HasMaxLength(100)
+                                .HasColumnType("nvarchar(100)");
+
+                            b1.Property<string>("Country")
+                                .IsRequired()
+                                .HasMaxLength(100)
+                                .HasColumnType("nvarchar(100)");
+
+                            b1.Property<string>("PostalCode")
+                                .IsRequired()
+                                .HasMaxLength(20)
+                                .HasColumnType("nvarchar(20)")
+                                .HasColumnName("Address_ZipCode");
+
+                            b1.Property<string>("Street")
+                                .IsRequired()
+                                .HasMaxLength(150)
+                                .HasColumnType("nvarchar(150)");
+
+                            b1.HasKey("AttendeeId");
+
+                            b1.ToTable("Attendees");
+
+                            b1.WithOwner()
+                                .HasForeignKey("AttendeeId");
+                        });
+
+                    b.Navigation("Address")
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("EFCore.Models.S2.Badge", b =>
+                {
+                    b.HasOne("EFCore.Models.S2.Attendee", "Attendee")
+                        .WithOne("Badge")
+                        .HasForeignKey("EFCore.Models.S2.Badge", "AttendeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Attendee");
+                });
+
+            modelBuilder.Entity("EFCore.Models.S2.Event", b =>
+                {
+                    b.HasOne("EFCore.Models.S2.Organizer", "Organizer")
+                        .WithMany("Events")
+                        .HasForeignKey("OrganizerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Organizer");
+                });
+
+            modelBuilder.Entity("EFCore.Models.S2.OrganizerProfile", b =>
+                {
+                    b.HasOne("EFCore.Models.S2.Organizer", "Organizer")
+                        .WithOne("Profile")
+                        .HasForeignKey("EFCore.Models.S2.OrganizerProfile", "OrganizerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Organizer");
+                });
+
+            modelBuilder.Entity("EFCore.Models.S2.Attendee", b =>
+                {
+                    b.Navigation("Badge");
+                });
+
+            modelBuilder.Entity("EFCore.Models.S2.Organizer", b =>
+                {
+                    b.Navigation("Events");
+
+                    b.Navigation("Profile");
                 });
 #pragma warning restore 612, 618
         }
