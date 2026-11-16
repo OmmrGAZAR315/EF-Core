@@ -22,61 +22,7 @@ namespace EFCore.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("EFCore.Models.S2.Attendee", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<string>("FullName")
-                        .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Attendees");
-                });
-
-            modelBuilder.Entity("EFCore.Models.S2.Badge", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("AttendeeId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("BadgeTier")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("IssuedOn")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("Number")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AttendeeId")
-                        .IsUnique();
-
-                    b.HasIndex("Number")
-                        .IsUnique();
-
-                    b.ToTable("Badges");
-                });
-
-            modelBuilder.Entity("EFCore.Models.S2.Event", b =>
+            modelBuilder.Entity("EFCore.Models.S3.Category", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -85,33 +31,66 @@ namespace EFCore.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
-                    b.Property<DateTime?>("EndDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("MaxAttendees")
+                    b.Property<int?>("ParentCategoryId")
                         .HasColumnType("int");
-
-                    b.Property<int>("OrganizerId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("StartDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("OrganizerId");
+                    b.HasIndex("ParentCategoryId");
 
-                    b.ToTable("Events");
+                    b.ToTable("Categories", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Description = "Software development courses",
+                            Name = "Programming"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Description = "Visual and product design",
+                            Name = "Design"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Description = "Server-side development",
+                            Name = "Backend",
+                            ParentCategoryId = 1
+                        },
+                        new
+                        {
+                            Id = 4,
+                            Description = "Client-side development",
+                            Name = "Frontend",
+                            ParentCategoryId = 1
+                        },
+                        new
+                        {
+                            Id = 5,
+                            Name = "ASP.NET",
+                            ParentCategoryId = 3
+                        },
+                        new
+                        {
+                            Id = 6,
+                            Description = "User interface & experience",
+                            Name = "UI/UX",
+                            ParentCategoryId = 2
+                        });
                 });
 
-            modelBuilder.Entity("EFCore.Models.S2.Organizer", b =>
+            modelBuilder.Entity("EFCore.Models.S3.Course", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -119,24 +98,150 @@ namespace EFCore.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("CompanyName")
-                        .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
+                    b.Property<int>("CategoryId")
+                        .HasColumnType("int");
 
-                    b.Property<bool>("IsVerified")
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int>("InstructorId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsPublished")
                         .HasColumnType("bit");
 
-                    b.Property<string>("Name")
+                    b.Property<string>("Level")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<decimal>("Price")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<DateTime?>("PublishedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.HasKey("Id");
 
-                    b.ToTable("EventOrganizers");
+                    b.HasIndex("CategoryId");
+
+                    b.HasIndex("InstructorId");
+
+                    b.ToTable("Courses", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            CategoryId = 5,
+                            Description = "Build REST APIs with ASP.NET Core.",
+                            InstructorId = 1,
+                            IsPublished = true,
+                            Level = "Intermediate",
+                            Price = 49.99m,
+                            PublishedDate = new DateTime(2025, 1, 15, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Title = "ASP.NET Core Web API"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            CategoryId = 3,
+                            Description = "Start programming with C#.",
+                            InstructorId = 1,
+                            IsPublished = true,
+                            Level = "Beginner",
+                            Price = 19.99m,
+                            PublishedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Title = "C# Fundamentals"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            CategoryId = 5,
+                            InstructorId = 2,
+                            IsPublished = false,
+                            Level = "Advanced",
+                            Price = 79.99m,
+                            Title = "Advanced EF Core"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            CategoryId = 4,
+                            Description = "Components, hooks and state.",
+                            InstructorId = 2,
+                            IsPublished = true,
+                            Level = "Beginner",
+                            Price = 29.99m,
+                            PublishedDate = new DateTime(2025, 3, 5, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Title = "React from Scratch"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            CategoryId = 4,
+                            Description = "Flexbox and Grid in depth.",
+                            InstructorId = 3,
+                            IsPublished = false,
+                            Level = "Intermediate",
+                            Price = 24.99m,
+                            Title = "Modern CSS Layouts"
+                        },
+                        new
+                        {
+                            Id = 6,
+                            CategoryId = 6,
+                            Description = "Design usable interfaces.",
+                            InstructorId = 3,
+                            IsPublished = true,
+                            Level = "Advanced",
+                            Price = 59.99m,
+                            PublishedDate = new DateTime(2025, 5, 20, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Title = "UI/UX Design Principles"
+                        });
                 });
 
-            modelBuilder.Entity("EFCore.Models.S2.OrganizerProfile", b =>
+            modelBuilder.Entity("EFCore.Models.S3.Enrollment", b =>
+                {
+                    b.Property<int>("StudentId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("CourseId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("EnrolledAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal?>("FinalGrade")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<int>("Progress")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.HasKey("StudentId", "CourseId");
+
+                    b.HasIndex("CourseId");
+
+                    b.ToTable("Enrollments", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Enrollments_Progress", "[Progress] BETWEEN 0 AND 100");
+                        });
+                });
+
+            modelBuilder.Entity("EFCore.Models.S3.Instructor", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -145,110 +250,152 @@ namespace EFCore.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Bio")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("Email")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
 
-                    b.Property<string>("Link")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Logo")
+                    b.Property<string>("FullName")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
-                    b.Property<int>("OrganizerId")
-                        .HasColumnType("int");
+                    b.Property<DateTime>("JoinedAt")
+                        .HasColumnType("date");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("OrganizerId")
+                    b.HasIndex("Email")
                         .IsUnique();
 
-                    b.ToTable("OrganizerProfiles");
-                });
+                    b.ToTable("Instructors", (string)null);
 
-            modelBuilder.Entity("EFCore.Models.S2.Attendee", b =>
-                {
-                    b.OwnsOne("EFCore.Models.S2.Address", "Address", b1 =>
+                    b.HasData(
+                        new
                         {
-                            b1.Property<int>("AttendeeId")
-                                .HasColumnType("int");
-
-                            b1.Property<string>("City")
-                                .IsRequired()
-                                .HasMaxLength(100)
-                                .HasColumnType("nvarchar(100)");
-
-                            b1.Property<string>("Country")
-                                .IsRequired()
-                                .HasMaxLength(100)
-                                .HasColumnType("nvarchar(100)");
-
-                            b1.Property<string>("PostalCode")
-                                .IsRequired()
-                                .HasMaxLength(20)
-                                .HasColumnType("nvarchar(20)")
-                                .HasColumnName("Address_ZipCode");
-
-                            b1.Property<string>("Street")
-                                .IsRequired()
-                                .HasMaxLength(150)
-                                .HasColumnType("nvarchar(150)");
-
-                            b1.HasKey("AttendeeId");
-
-                            b1.ToTable("Attendees");
-
-                            b1.WithOwner()
-                                .HasForeignKey("AttendeeId");
+                            Id = 1,
+                            Bio = "Senior .NET developer, 10 years of backend work.",
+                            Email = "ahmed.fathy@learn.com",
+                            FullName = "Ahmed Fathy",
+                            JoinedAt = new DateTime(2023, 1, 10, 0, 0, 0, 0, DateTimeKind.Unspecified)
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Bio = "Full-stack engineer and React trainer.",
+                            Email = "sara.mahmoud@learn.com",
+                            FullName = "Sara Mahmoud",
+                            JoinedAt = new DateTime(2023, 6, 1, 0, 0, 0, 0, DateTimeKind.Unspecified)
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Email = "hassan.ali@learn.com",
+                            FullName = "Hassan Ali",
+                            JoinedAt = new DateTime(2024, 2, 20, 0, 0, 0, 0, DateTimeKind.Unspecified)
                         });
-
-                    b.Navigation("Address")
-                        .IsRequired();
                 });
 
-            modelBuilder.Entity("EFCore.Models.S2.Badge", b =>
+            modelBuilder.Entity("EFCore.Models.S3.Student", b =>
                 {
-                    b.HasOne("EFCore.Models.S2.Attendee", "Attendee")
-                        .WithOne("Badge")
-                        .HasForeignKey("EFCore.Models.S2.Badge", "AttendeeId")
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateOnly>("DateOfBirth")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Email")
+                        .IsUnique();
+
+                    b.ToTable("Students", (string)null);
+                });
+
+            modelBuilder.Entity("EFCore.Models.S3.Category", b =>
+                {
+                    b.HasOne("EFCore.Models.S3.Category", "ParentCategory")
+                        .WithMany("SubCategories")
+                        .HasForeignKey("ParentCategoryId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("ParentCategory");
+                });
+
+            modelBuilder.Entity("EFCore.Models.S3.Course", b =>
+                {
+                    b.HasOne("EFCore.Models.S3.Category", "Category")
+                        .WithMany("Courses")
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("EFCore.Models.S3.Instructor", "Instructor")
+                        .WithMany("Courses")
+                        .HasForeignKey("InstructorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Category");
+
+                    b.Navigation("Instructor");
+                });
+
+            modelBuilder.Entity("EFCore.Models.S3.Enrollment", b =>
+                {
+                    b.HasOne("EFCore.Models.S3.Course", "Course")
+                        .WithMany("Enrollments")
+                        .HasForeignKey("CourseId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Attendee");
-                });
-
-            modelBuilder.Entity("EFCore.Models.S2.Event", b =>
-                {
-                    b.HasOne("EFCore.Models.S2.Organizer", "Organizer")
-                        .WithMany("Events")
-                        .HasForeignKey("OrganizerId")
+                    b.HasOne("EFCore.Models.S3.Student", "Student")
+                        .WithMany("Enrollments")
+                        .HasForeignKey("StudentId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Organizer");
+                    b.Navigation("Course");
+
+                    b.Navigation("Student");
                 });
 
-            modelBuilder.Entity("EFCore.Models.S2.OrganizerProfile", b =>
+            modelBuilder.Entity("EFCore.Models.S3.Category", b =>
                 {
-                    b.HasOne("EFCore.Models.S2.Organizer", "Organizer")
-                        .WithOne("Profile")
-                        .HasForeignKey("EFCore.Models.S2.OrganizerProfile", "OrganizerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                    b.Navigation("Courses");
 
-                    b.Navigation("Organizer");
+                    b.Navigation("SubCategories");
                 });
 
-            modelBuilder.Entity("EFCore.Models.S2.Attendee", b =>
+            modelBuilder.Entity("EFCore.Models.S3.Course", b =>
                 {
-                    b.Navigation("Badge");
+                    b.Navigation("Enrollments");
                 });
 
-            modelBuilder.Entity("EFCore.Models.S2.Organizer", b =>
+            modelBuilder.Entity("EFCore.Models.S3.Instructor", b =>
                 {
-                    b.Navigation("Events");
+                    b.Navigation("Courses");
+                });
 
-                    b.Navigation("Profile");
+            modelBuilder.Entity("EFCore.Models.S3.Student", b =>
+                {
+                    b.Navigation("Enrollments");
                 });
 #pragma warning restore 612, 618
         }
