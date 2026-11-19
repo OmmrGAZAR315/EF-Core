@@ -4,7 +4,9 @@
 // using EFCore.Models.S1;
 // using EFCore.Models.S2;
 using EFCore.Configurations.S3;
+using EFCore.Configurations.S4;
 using EFCore.Models.S3;
+using EFCore.Models.S4;
 using Microsoft.EntityFrameworkCore;
 
 namespace EFCore;
@@ -16,6 +18,13 @@ public class AppDbContext : DbContext
     public DbSet<Course> Courses => Set<Course>();
     public DbSet<Student> Students => Set<Student>();
     public DbSet<Enrollment> Enrollments => Set<Enrollment>();
+
+    public DbSet<Manager> Managers => Set<Manager>();
+    public DbSet<Branch> Branches => Set<Branch>();
+    public DbSet<Customer> Customers => Set<Customer>();
+    public DbSet<Account> Accounts => Set<Account>();
+    public DbSet<CustomerAccount> CustomerAccounts => Set<CustomerAccount>();
+    public DbSet<Transaction> Transactions => Set<Transaction>();
 
     // public DbSet<Book> Books => Set<Book>();
     // public DbSet<Author> Authors => Set<Author>();
@@ -40,6 +49,13 @@ public class AppDbContext : DbContext
         modelBuilder.ApplyConfiguration(new CourseConfiguration());
         modelBuilder.ApplyConfiguration(new StudentConfiguration());
         modelBuilder.ApplyConfiguration(new EnrollmentConfiguration());
+
+        modelBuilder.ApplyConfiguration(new ManagerConfiguration());
+        modelBuilder.ApplyConfiguration(new BranchConfiguration());
+        modelBuilder.ApplyConfiguration(new CustomerConfiguration());
+        modelBuilder.ApplyConfiguration(new AccountConfiguration());
+        modelBuilder.ApplyConfiguration(new CustomerAccountConfiguration());
+        modelBuilder.ApplyConfiguration(new TransactionConfiguration());
 
         // modelBuilder.ApplyConfiguration(new CustomerConfiguration());
         // modelBuilder.ApplyConfiguration(new OrderConfiguration());

@@ -328,6 +328,439 @@ namespace EFCore.Migrations
                     b.ToTable("Students", (string)null);
                 });
 
+            modelBuilder.Entity("EFCore.Models.S4.Account", b =>
+                {
+                    b.Property<string>("AccountNumber")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("AccountType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("BranchCode")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<decimal>("CurrentBalance")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateOnly>("OpeningDate")
+                        .HasColumnType("date");
+
+                    b.HasKey("AccountNumber");
+
+                    b.HasIndex("BranchCode");
+
+                    b.ToTable("Accounts", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Accounts_CurrentBalance", "[CurrentBalance] >= 0");
+                        });
+
+                    b.HasData(
+                        new
+                        {
+                            AccountNumber = "2001-CUR",
+                            AccountType = "Current",
+                            BranchCode = "CAI-01",
+                            CurrentBalance = 15400m,
+                            OpeningDate = new DateOnly(2020, 2, 10)
+                        },
+                        new
+                        {
+                            AccountNumber = "3000-BUS",
+                            AccountType = "Business",
+                            BranchCode = "ALX-01",
+                            CurrentBalance = 120000m,
+                            OpeningDate = new DateOnly(2019, 7, 1)
+                        },
+                        new
+                        {
+                            AccountNumber = "4001-SAV",
+                            AccountType = "Savings",
+                            BranchCode = "GIZ-01",
+                            CurrentBalance = 52000m,
+                            OpeningDate = new DateOnly(2021, 11, 5)
+                        });
+                });
+
+            modelBuilder.Entity("EFCore.Models.S4.Branch", b =>
+                {
+                    b.Property<string>("Code")
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<string>("Address")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("ManagerId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.HasKey("Code");
+
+                    b.HasIndex("ManagerId")
+                        .IsUnique();
+
+                    b.ToTable("Branches", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Code = "CAI-01",
+                            Address = "15 Tahrir Square, Cairo",
+                            ManagerId = 1,
+                            Name = "Cairo Main Branch",
+                            PhoneNumber = "0223456789"
+                        },
+                        new
+                        {
+                            Code = "ALX-01",
+                            Address = "22 Corniche Rd, Alexandria",
+                            ManagerId = 2,
+                            Name = "Alexandria Branch",
+                            PhoneNumber = "034567890"
+                        },
+                        new
+                        {
+                            Code = "GIZ-01",
+                            Address = "8 Pyramids St, Giza",
+                            ManagerId = 3,
+                            Name = "Giza Branch",
+                            PhoneNumber = "0237654321"
+                        });
+                });
+
+            modelBuilder.Entity("EFCore.Models.S4.Customer", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Address")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("CustomerType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateOnly>("DateOfBirth")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("NationalId")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NationalId")
+                        .IsUnique();
+
+                    b.ToTable("Customers", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Address = "10 Nasr St, Cairo",
+                            CustomerType = "Individual",
+                            DateOfBirth = new DateOnly(1990, 1, 1),
+                            Email = "ahmed.ali@mail.com",
+                            FullName = "Ahmed Ali",
+                            NationalId = "29001011234567",
+                            PhoneNumber = "01011111111"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Address = "5 Port St, Alexandria",
+                            CustomerType = "Business",
+                            DateOfBirth = new DateOnly(2010, 5, 20),
+                            Email = "info@niletrading.com",
+                            FullName = "Nile Trading LLC",
+                            NationalId = "20100520001",
+                            PhoneNumber = "034440000"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Address = "3 Haram St, Giza",
+                            CustomerType = "Individual",
+                            DateOfBirth = new DateOnly(1995, 5, 15),
+                            Email = "salma.youssef@mail.com",
+                            FullName = "Salma Youssef",
+                            NationalId = "29505151234568",
+                            PhoneNumber = "01022222222"
+                        });
+                });
+
+            modelBuilder.Entity("EFCore.Models.S4.CustomerAccount", b =>
+                {
+                    b.Property<int>("CustomerId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("AccountNumber")
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("AccountStatus")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateOnly>("OwnershipStartDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("OwnershipType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.HasKey("CustomerId", "AccountNumber");
+
+                    b.HasIndex("AccountNumber");
+
+                    b.ToTable("CustomerAccounts", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            CustomerId = 1,
+                            AccountNumber = "2001-CUR",
+                            AccountStatus = "Active",
+                            OwnershipStartDate = new DateOnly(2020, 2, 10),
+                            OwnershipType = "Primary"
+                        },
+                        new
+                        {
+                            CustomerId = 2,
+                            AccountNumber = "3000-BUS",
+                            AccountStatus = "Active",
+                            OwnershipStartDate = new DateOnly(2019, 7, 1),
+                            OwnershipType = "Primary"
+                        },
+                        new
+                        {
+                            CustomerId = 3,
+                            AccountNumber = "4001-SAV",
+                            AccountStatus = "Active",
+                            OwnershipStartDate = new DateOnly(2021, 11, 5),
+                            OwnershipType = "Primary"
+                        },
+                        new
+                        {
+                            CustomerId = 1,
+                            AccountNumber = "4001-SAV",
+                            AccountStatus = "Active",
+                            OwnershipStartDate = new DateOnly(2022, 1, 15),
+                            OwnershipType = "CoHolder"
+                        });
+                });
+
+            modelBuilder.Entity("EFCore.Models.S4.Manager", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateOnly>("HireDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Email")
+                        .IsUnique();
+
+                    b.ToTable("Managers", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Email = "hossam.fathy@nationalbank.com",
+                            FullName = "Hossam Fathy",
+                            HireDate = new DateOnly(2015, 3, 1),
+                            PhoneNumber = "01000000001"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Email = "dina.mahmoud@nationalbank.com",
+                            FullName = "Dina Mahmoud",
+                            HireDate = new DateOnly(2017, 6, 15),
+                            PhoneNumber = "01000000002"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Email = "karim.saad@nationalbank.com",
+                            FullName = "Karim Saad",
+                            HireDate = new DateOnly(2019, 9, 10),
+                            PhoneNumber = "01000000003"
+                        });
+                });
+
+            modelBuilder.Entity("EFCore.Models.S4.Transaction", b =>
+                {
+                    b.Property<int>("TransactionNumber")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("TransactionNumber"));
+
+                    b.Property<string>("AccountNumber")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)");
+
+                    b.Property<DateTime>("TransactionDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("TransactionType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.HasKey("TransactionNumber");
+
+                    b.HasIndex("AccountNumber");
+
+                    b.ToTable("Transactions", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Transactions_Amount", "[Amount] > 0");
+                        });
+
+                    b.HasData(
+                        new
+                        {
+                            TransactionNumber = 1,
+                            AccountNumber = "2001-CUR",
+                            Amount = 20000m,
+                            Note = "Initial deposit",
+                            TransactionDate = new DateTime(2025, 1, 5, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            TransactionType = "Deposit"
+                        },
+                        new
+                        {
+                            TransactionNumber = 2,
+                            AccountNumber = "2001-CUR",
+                            Amount = 4600m,
+                            Note = "Rent payment",
+                            TransactionDate = new DateTime(2025, 2, 10, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            TransactionType = "Withdrawal"
+                        },
+                        new
+                        {
+                            TransactionNumber = 3,
+                            AccountNumber = "3000-BUS",
+                            Amount = 150000m,
+                            Note = "Capital injection",
+                            TransactionDate = new DateTime(2025, 1, 15, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            TransactionType = "Deposit"
+                        },
+                        new
+                        {
+                            TransactionNumber = 4,
+                            AccountNumber = "3000-BUS",
+                            Amount = 30000m,
+                            Note = "Supplier payment",
+                            TransactionDate = new DateTime(2025, 3, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            TransactionType = "Transfer"
+                        },
+                        new
+                        {
+                            TransactionNumber = 5,
+                            AccountNumber = "4001-SAV",
+                            Amount = 50000m,
+                            Note = "Opening deposit",
+                            TransactionDate = new DateTime(2025, 1, 20, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            TransactionType = "Deposit"
+                        },
+                        new
+                        {
+                            TransactionNumber = 6,
+                            AccountNumber = "4001-SAV",
+                            Amount = 2000m,
+                            Note = "Monthly savings",
+                            TransactionDate = new DateTime(2025, 4, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            TransactionType = "Deposit"
+                        },
+                        new
+                        {
+                            TransactionNumber = 7,
+                            AccountNumber = "4001-SAV",
+                            Amount = 2000m,
+                            TransactionDate = new DateTime(2025, 5, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            TransactionType = "Deposit"
+                        },
+                        new
+                        {
+                            TransactionNumber = 8,
+                            AccountNumber = "4001-SAV",
+                            Amount = 2000m,
+                            Note = "ATM withdrawal",
+                            TransactionDate = new DateTime(2025, 6, 12, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            TransactionType = "Withdrawal"
+                        });
+                });
+
             modelBuilder.Entity("EFCore.Models.S3.Category", b =>
                 {
                     b.HasOne("EFCore.Models.S3.Category", "ParentCategory")
@@ -376,6 +809,58 @@ namespace EFCore.Migrations
                     b.Navigation("Student");
                 });
 
+            modelBuilder.Entity("EFCore.Models.S4.Account", b =>
+                {
+                    b.HasOne("EFCore.Models.S4.Branch", "Branch")
+                        .WithMany("Accounts")
+                        .HasForeignKey("BranchCode")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Branch");
+                });
+
+            modelBuilder.Entity("EFCore.Models.S4.Branch", b =>
+                {
+                    b.HasOne("EFCore.Models.S4.Manager", "Manager")
+                        .WithOne("Branch")
+                        .HasForeignKey("EFCore.Models.S4.Branch", "ManagerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Manager");
+                });
+
+            modelBuilder.Entity("EFCore.Models.S4.CustomerAccount", b =>
+                {
+                    b.HasOne("EFCore.Models.S4.Account", "Account")
+                        .WithMany("CustomerAccounts")
+                        .HasForeignKey("AccountNumber")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("EFCore.Models.S4.Customer", "Customer")
+                        .WithMany("CustomerAccounts")
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Account");
+
+                    b.Navigation("Customer");
+                });
+
+            modelBuilder.Entity("EFCore.Models.S4.Transaction", b =>
+                {
+                    b.HasOne("EFCore.Models.S4.Account", "Account")
+                        .WithMany("Transactions")
+                        .HasForeignKey("AccountNumber")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Account");
+                });
+
             modelBuilder.Entity("EFCore.Models.S3.Category", b =>
                 {
                     b.Navigation("Courses");
@@ -396,6 +881,28 @@ namespace EFCore.Migrations
             modelBuilder.Entity("EFCore.Models.S3.Student", b =>
                 {
                     b.Navigation("Enrollments");
+                });
+
+            modelBuilder.Entity("EFCore.Models.S4.Account", b =>
+                {
+                    b.Navigation("CustomerAccounts");
+
+                    b.Navigation("Transactions");
+                });
+
+            modelBuilder.Entity("EFCore.Models.S4.Branch", b =>
+                {
+                    b.Navigation("Accounts");
+                });
+
+            modelBuilder.Entity("EFCore.Models.S4.Customer", b =>
+                {
+                    b.Navigation("CustomerAccounts");
+                });
+
+            modelBuilder.Entity("EFCore.Models.S4.Manager", b =>
+                {
+                    b.Navigation("Branch");
                 });
 #pragma warning restore 612, 618
         }

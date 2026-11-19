@@ -1,4 +1,6 @@
-﻿using EFCore.Models.S3;
+﻿using System.Globalization;
+using System.Net.Mail;
+using EFCore.Models.S4;
 using Microsoft.EntityFrameworkCore;
 
 namespace EFCore;
@@ -7,635 +9,387 @@ public class Program
 {
     public static void Main()
     {
-        using (var db = new AppDbContext())
-        {
-            SeedStudents(db);
-            SeedEnrollments(db);
-        }
-
-        Header("CREATE: Add an instructor");
-        var instructorId = AddInstructor("Dr. Ahmed El-Sayed", "ahmed.elsayed@mail.com",
-            "Expert in C# and .NET technologies with 15 years of experience.");
-
-        Header("CREATE: Add a course");
-        AddCourse(instructorId ?? 0, 5, "Clean Architecture in .NET", 89.99m, CourseLevel.Advanced);
-        AddCourse(instructorId ?? 0, 999, "Course With Missing Category", 10m, CourseLevel.Beginner);
-        AddCourse(999, 5, "Course With Missing Instructor", 10m, CourseLevel.Beginner);
-
-        Header("CREATE: Add several students");
-        AddStudents();
-
-        var omar = GetStudentId("omar.khaled@mail.com");
-        var mariam = GetStudentId("mariam.adel@mail.com");
-        var nour = GetStudentId("nour.hany@mail.com");
-        var laila = GetStudentId("laila.hassan@mail.com");
-
-        Header("CREATE: Enroll a student");
-        EnrollStudent(laila, 4);
-        EnrollStudent(omar, 3);
-        EnrollStudent(omar, 1);
-        EnrollStudent(999, 1);
-        EnrollStudent(omar, 999);
-
-        Header("READ: Find a course");
-        FindCourse(1, "React from Scratch");
-        FindCourse(999, "No Such Course");
-
-        Header("READ: Filter courses by price");
-        FilterCoursesByPrice(20m, 60m);
-        FilterCoursesByPrice(60m, 20m);
-
-        Header("READ: Sub-categories");
-        PrintSubCategories(1);
-        PrintSubCategories(999);
-        PrintTopLevelCategories();
-
-        Header("READ: Course roster");
-        PrintCourseRoster(1);
-        PrintCourseRoster(999);
-
-        Header("UPDATE: Change a price");
-        ChangeCoursePrice(4, 34.99m);
-        ChangeCoursePrice(4, -10m);
-        ChangeCoursePrice(999, 10m);
-
-        Header("UPDATE: Update progress");
-        UpdateProgress(mariam, 4, 150);
-        UpdateProgress(mariam, 4, 100);
-        UpdateProgress(omar, 999, 50);
-
-        Header("UPDATE: Publish a course");
-        PublishCourse(5);
-        PublishCourse(999);
-
-        Header("DELETE: Unenroll");
-        Unenroll(nour, 6);
-
-        Header("DELETE: Delete a category");
-        DeleteCategoryUnsafe(1);
-        DeleteCategorySafe(1);
-        DeleteCategorySafe(6);
-        DeleteCategorySafe(999);
-
-        Header("DELETE: Delete a course");
-        DeleteCourse(2);
-
-        Header("BULK: Raise price by 10%");
-        BulkRaisePrice(CourseLevel.Intermediate);
-
-        Header("BULK: Delete dropped enrollments");
-        BulkDeleteDroppedEnrollments();
-    }
-
-    private static void Header(string title)
-    {
-        Console.WriteLine();
-        Console.WriteLine($"===== {title} =====");
-    }
-
-    private static int GetStudentId(string email)
-    {
         using var db = new AppDbContext();
-        return db.Students
-            .Where(s => s.Email == email)
-            .Select(s => s.Id)
-            .FirstOrDefault();
-    }
-
-    private static int? AddInstructor(string fullName, string email, string? bio)
-    {
-        using var db = new AppDbContext();
-
-        var existingId = db.Instructors
-            .Where(i => i.Email == email)
-            .Select(i => (int?)i.Id)
-            .FirstOrDefault();
-        if (existingId != null)
-        {
-            Console.WriteLine($"An instructor with email '{email}' already exists (Id = {existingId}).");
-            return existingId;
-        }
-
-        var instructor = new Instructor
-        {
-            FullName = fullName,
-            Email = email,
-            Bio = bio,
-            JoinedAt = DateTime.Today
-        };
-
-        db.Instructors.Add(instructor);
-        db.SaveChanges();
-
-        Console.WriteLine($"Instructor '{instructor.FullName}' added with Id = {instructor.Id}.");
-        return instructor.Id;
-    }
-
-    private static void AddCourse(int instructorId, int categoryId, string title, decimal price, CourseLevel level)
-    {
-        using var db = new AppDbContext();
-
-        if (!db.Instructors.Any(i => i.Id == instructorId))
-        {
-            Console.WriteLine($"Cannot add '{title}': instructor {instructorId} does not exist.");
-            return;
-        }
-
-        if (!db.Categories.Any(c => c.Id == categoryId))
-        {
-            Console.WriteLine($"Cannot add '{title}': category {categoryId} does not exist.");
-            return;
-        }
-
-        if (db.Courses.Any(c => c.Title == title))
-        {
-            Console.WriteLine($"A course titled '{title}' already exists.");
-            return;
-        }
-
-        var course = new Course
-        {
-            Title = title,
-            Price = price,
-            Level = level,
-            IsPublished = false,
-            InstructorId = instructorId,
-            CategoryId = categoryId
-        };
-
-        db.Courses.Add(course);
-        db.SaveChanges();
-
-        Console.WriteLine($"Course '{course.Title}' added with Id = {course.Id}.");
-    }
-
-    private static void AddStudents()
-    {
-        using var db = new AppDbContext();
-
-        var candidates = new List<Student>
-        {
-            new() { FullName = "Laila Hassan", Email = "laila.hassan@mail.com", DateOfBirth = new DateOnly(2003, 2, 14) },
-            new() { FullName = "Tarek Nabil", Email = "tarek.nabil@mail.com", DateOfBirth = new DateOnly(2000, 12, 1) },
-            new() { FullName = "Hana Waleed", Email = "hana.waleed@mail.com", DateOfBirth = new DateOnly(2001, 8, 22) },
-        };
-
-        var emails = candidates.Select(s => s.Email).ToList();
-        var existingEmails = db.Students
-            .Where(s => emails.Contains(s.Email))
-            .Select(s => s.Email)
-            .ToList();
-
-        var newStudents = candidates.Where(s => !existingEmails.Contains(s.Email)).ToList();
-        if (newStudents.Count == 0)
-        {
-            Console.WriteLine("These students already exist, nothing to add.");
-            return;
-        }
-
-        db.Students.AddRange(newStudents);
-        db.SaveChanges();
-
-        foreach (var s in newStudents)
-            Console.WriteLine($"Student '{s.FullName}' added with Id = {s.Id}.");
-    }
-
-    private static void EnrollStudent(int studentId, int courseId)
-    {
-        using var db = new AppDbContext();
-
-        if (!db.Students.Any(s => s.Id == studentId))
-        {
-            Console.WriteLine($"Enrollment refused: student {studentId} does not exist.");
-            return;
-        }
-
-        var course = db.Courses.Find(courseId);
-        if (course == null)
-        {
-            Console.WriteLine($"Enrollment refused: course {courseId} does not exist.");
-            return;
-        }
-
-        if (!course.IsPublished)
-        {
-            Console.WriteLine($"Enrollment refused: course '{course.Title}' is not published.");
-            return;
-        }
-
-        if (db.Enrollments.Any(e => e.StudentId == studentId && e.CourseId == courseId))
-        {
-            Console.WriteLine($"Enrollment refused: student {studentId} is already enrolled in '{course.Title}'.");
-            return;
-        }
-
-        db.Enrollments.Add(new Enrollment
-        {
-            StudentId = studentId,
-            CourseId = courseId,
-            EnrolledAt = DateTime.Now,
-            Progress = 0,
-            Status = EnrollmentStatus.Active
-        });
-        db.SaveChanges();
-
-        Console.WriteLine($"Student {studentId} enrolled in '{course.Title}'.");
-    }
-
-    private static void FindCourse(int id, string title)
-    {
-        using var db = new AppDbContext();
-
-        var byId = db.Courses.Find(id);
-        Console.WriteLine(byId == null
-            ? $"Find({id}): not found"
-            : $"Find({id}): {byId.Title} | {byId.Level} | {byId.Price:C}");
-
-        var byTitle = db.Courses.FirstOrDefault(c => c.Title == title);
-        Console.WriteLine(byTitle == null
-            ? $"Title '{title}': not found"
-            : $"Title '{title}': Id = {byTitle.Id} | {byTitle.Level} | {byTitle.Price:C}");
-    }
-
-    private static void FilterCoursesByPrice(decimal min, decimal max)
-    {
-        if (min > max)
-        {
-            Console.WriteLine($"Invalid range: min ({min}) is greater than max ({max}).");
-            return;
-        }
-
-        using var db = new AppDbContext();
-
-        var courses = db.Courses
-            .Where(c => c.Price >= min && c.Price <= max)
-            .OrderByDescending(c => c.Price)
-            .Select(c => new { c.Title, c.Level, c.Price })
-            .ToList();
-
-        Console.WriteLine($"Courses priced between {min:C} and {max:C}:");
-        if (courses.Count == 0)
-            Console.WriteLine("  (none)");
-
-        foreach (var c in courses)
-            Console.WriteLine($"  {c.Title,-30} {c.Level,-13} {c.Price,8:C}");
-    }
-
-    private static void PrintSubCategories(int categoryId)
-    {
-        using var db = new AppDbContext();
-
-        var parent = db.Categories.Find(categoryId);
-        if (parent == null)
-        {
-            Console.WriteLine($"Category {categoryId} not found.");
-            return;
-        }
-
-        var subCategories = db.Categories
-            .Where(c => c.ParentCategoryId == categoryId)
-            .OrderBy(c => c.Name)
-            .ToList();
-
-        Console.WriteLine($"Sub-categories of '{parent.Name}':");
-        if (subCategories.Count == 0)
-            Console.WriteLine("  (none)");
-
-        foreach (var c in subCategories)
-            Console.WriteLine($"  [{c.Id}] {c.Name}");
-    }
-
-    private static void PrintTopLevelCategories()
-    {
-        using var db = new AppDbContext();
-
-        var topLevel = db.Categories
-            .Where(c => c.ParentCategoryId == null)
-            .OrderBy(c => c.Name)
-            .ToList();
-
-        Console.WriteLine("Top-level categories:");
-        foreach (var c in topLevel)
-            Console.WriteLine($"  [{c.Id}] {c.Name}");
-    }
-
-    private static void PrintCourseRoster(int courseId)
-    {
-        using var db = new AppDbContext();
-
-        var course = db.Courses.Find(courseId);
-        if (course == null)
-        {
-            Console.WriteLine($"Course {courseId} not found.");
-            return;
-        }
-
-        var studentIds = db.Enrollments
-            .Where(e => e.CourseId == courseId)
-            .Select(e => e.StudentId)
-            .ToList();
-
-        var students = db.Students
-            .Where(s => studentIds.Contains(s.Id))
-            .OrderBy(s => s.FullName)
-            .ToList();
-
-        Console.WriteLine($"'{course.Title}' has {studentIds.Count} enrolled student(s):");
-        foreach (var s in students)
-            Console.WriteLine($"  - {s.FullName}");
-    }
-
-    private static void ChangeCoursePrice(int courseId, decimal newPrice)
-    {
-        if (newPrice < 0)
-        {
-            Console.WriteLine($"Invalid price {newPrice}: price cannot be negative.");
-            return;
-        }
-
-        using var db = new AppDbContext();
-
-        var course = db.Courses.Find(courseId);
-        if (course == null)
-        {
-            Console.WriteLine($"Course {courseId} not found.");
-            return;
-        }
-
-        var oldPrice = course.Price;
-        course.Price = newPrice;
-        db.SaveChanges();
-
-        Console.WriteLine($"'{course.Title}' price changed from {oldPrice:C} to {newPrice:C}.");
-    }
-
-    private static void UpdateProgress(int studentId, int courseId, int progress)
-    {
-        if (progress < 0 || progress > 100)
-        {
-            Console.WriteLine($"Rejected: progress must be between 0 and 100 (got {progress}).");
-            return;
-        }
-
-        using var db = new AppDbContext();
-
-        var enrollment = db.Enrollments.Find(studentId, courseId);
-        if (enrollment == null)
-        {
-            Console.WriteLine($"Enrollment (student {studentId}, course {courseId}) not found.");
-            return;
-        }
-
-        enrollment.Progress = progress;
-        if (progress == 100)
-            enrollment.Status = EnrollmentStatus.Completed;
-
-        db.SaveChanges();
-
-        Console.WriteLine($"Enrollment (student {studentId}, course {courseId}): progress = {progress}%, status = {enrollment.Status}.");
-    }
-
-    private static void PublishCourse(int courseId)
-    {
-        using var db = new AppDbContext();
-
-        var course = db.Courses.Find(courseId);
-        if (course == null)
-        {
-            Console.WriteLine($"Course {courseId} not found.");
-            return;
-        }
-
-        if (course.IsPublished)
-        {
-            Console.WriteLine($"'{course.Title}' is already published (since {course.PublishedDate:d}).");
-            return;
-        }
-
-        course.IsPublished = true;
-        course.PublishedDate = DateTime.Now;
-        db.SaveChanges();
-
-        Console.WriteLine($"'{course.Title}' published on {course.PublishedDate:g}.");
-    }
-
-    private static void Unenroll(int studentId, int courseId)
-    {
-        using var db = new AppDbContext();
-
-        var enrollment = db.Enrollments.Find(studentId, courseId);
-        if (enrollment == null)
-        {
-            Console.WriteLine($"Enrollment (student {studentId}, course {courseId}) not found.");
-            return;
-        }
-
-        db.Enrollments.Remove(enrollment);
-        db.SaveChanges();
-
-        Console.WriteLine($"Student {studentId} unenrolled from course {courseId}.");
-    }
-
-    private static void DeleteCategoryUnsafe(int categoryId)
-    {
-        using var db = new AppDbContext();
-
-        var category = db.Categories.Find(categoryId);
-        if (category == null)
-        {
-            Console.WriteLine($"Category {categoryId} not found.");
-            return;
-        }
 
         try
         {
-            db.Categories.Remove(category);
-            db.SaveChanges();
-            Console.WriteLine($"Category '{category.Name}' deleted.");
-        }
-        catch (DbUpdateException ex)
-        {
-            Console.WriteLine($"Could not delete '{category.Name}' (unsafe version):");
-            Console.WriteLine($"  {ex.Message}");
-            Console.WriteLine($"  {ex.InnerException?.Message}");
-        }
-    }
-
-    private static void DeleteCategorySafe(int categoryId)
-    {
-        using var db = new AppDbContext();
-
-        var category = db.Categories.Find(categoryId);
-        if (category == null)
-        {
-            Console.WriteLine($"Category {categoryId} not found.");
-            return;
-        }
-
-        var subCount = db.Categories.Count(c => c.ParentCategoryId == categoryId);
-        if (subCount > 0)
-        {
-            Console.WriteLine($"Cannot delete '{category.Name}': it still has {subCount} sub-category(ies).");
-            return;
-        }
-
-        var courseCount = db.Courses.Count(c => c.CategoryId == categoryId);
-        if (courseCount > 0)
-        {
-            Console.WriteLine($"Cannot delete '{category.Name}': it still has {courseCount} course(s).");
-            return;
-        }
-
-        db.Categories.Remove(category);
-        db.SaveChanges();
-
-        Console.WriteLine($"Category '{category.Name}' deleted.");
-    }
-
-    private static void DeleteCourse(int courseId)
-    {
-        using var db = new AppDbContext();
-
-        var course = db.Courses.Find(courseId);
-        if (course == null)
-        {
-            Console.WriteLine($"Course {courseId} not found.");
-            return;
-        }
-
-        var before = db.Enrollments.Count(e => e.CourseId == courseId);
-        Console.WriteLine($"'{course.Title}' has {before} enrollment(s) before delete.");
-
-        db.Courses.Remove(course);
-        db.SaveChanges();
-
-        var after = db.Enrollments.Count(e => e.CourseId == courseId);
-        Console.WriteLine($"'{course.Title}' deleted. Enrollments after delete: {after}.");
-        Console.WriteLine("They were removed because Enrollment -> Course is configured with DeleteBehavior.Cascade,");
-        Console.WriteLine("so SQL Server (ON DELETE CASCADE) deletes every enrollment that points to the deleted course.");
-    }
-
-    private static void BulkRaisePrice(CourseLevel level)
-    {
-        using var db = new AppDbContext();
-
-        var affected = db.Courses
-            .Where(c => c.IsPublished && c.Level == level)
-            .ExecuteUpdate(s => s.SetProperty(c => c.Price, c => c.Price * 1.10m));
-
-        Console.WriteLine($"Raised the price of published {level} courses by 10%. Rows affected: {affected}.");
-    }
-
-    private static void BulkDeleteDroppedEnrollments()
-    {
-        using var db = new AppDbContext();
-
-        var affected = db.Enrollments
-            .Where(e => e.Status == EnrollmentStatus.Dropped)
-            .ExecuteDelete();
-
-        Console.WriteLine($"Deleted dropped enrollments. Rows affected: {affected}.");
-    }
-
-    private static void SeedStudents(AppDbContext db)
-    {
-        if (db.Students.Any())
-        {
-            Console.WriteLine("Students already seeded, skipping.");
-            return;
-        }
-
-        var students = new List<Student>
-        {
-            new() { FullName = "Omar Khaled", Email = "omar.khaled@mail.com", DateOfBirth = new DateOnly(2001, 4, 12) },
-            new() { FullName = "Mariam Adel", Email = "mariam.adel@mail.com", DateOfBirth = new DateOnly(2000, 9, 3) },
-            new()
+            while (true)
             {
-                FullName = "Youssef Samir", Email = "youssef.samir@mail.com", DateOfBirth = new DateOnly(1999, 1, 25)
-            },
-            new() { FullName = "Nour Hany", Email = "nour.hany@mail.com", DateOfBirth = new DateOnly(2002, 7, 18) },
-            new()
-            {
-                FullName = "Karim Mostafa", Email = "karim.mostafa@mail.com", DateOfBirth = new DateOnly(1998, 11, 30)
-            },
+                DrawMenu();
+                var choice = ReadInt("  Enter choice: ", 0, 5);
+                if (choice == 0)
+                    break;
+
+                Console.WriteLine();
+                try
+                {
+                    switch (choice)
+                    {
+                        case 1: AddCustomer(db); break;
+                        case 2: OpenAccount(db); break;
+                        case 3: UpdateAccountStatus(db); break;
+                        case 4: RemoveAccountFromCustomer(db); break;
+                        case 5: ListCustomers(db); break;
+                    }
+                }
+                catch (DbUpdateException ex)
+                {
+                    Error($"Database error: {ex.InnerException?.Message ?? ex.Message}");
+                    db.ChangeTracker.Clear();
+                }
+
+                Pause();
+            }
+        }
+        catch (EndOfStreamException)
+        {
+        }
+
+        Console.WriteLine();
+        Console.WriteLine("Goodbye!");
+    }
+
+    private static void DrawMenu()
+    {
+        try { Console.Clear(); } catch (IOException) { }
+
+        Console.WriteLine("========================================");
+        Console.WriteLine("    National Bank - Management");
+        Console.WriteLine("========================================");
+        Console.WriteLine("  1) Add a new Customer");
+        Console.WriteLine("  2) Open a new Account for a Customer");
+        Console.WriteLine("  3) Update Account Status (Active / Closed)");
+        Console.WriteLine("  4) Remove an Account from a Customer");
+        Console.WriteLine("  5) List all Customers (with accounts)");
+        Console.WriteLine("  0) Exit");
+        Console.WriteLine("----------------------------------------");
+    }
+
+    private static void AddCustomer(AppDbContext db)
+    {
+        Console.WriteLine("--- Add New Customer ---");
+
+        var fullName = ReadRequired("Full Name      : ", 100);
+
+        var nationalId = ReadValidated("National ID    : ", 20,
+            v => v.All(char.IsDigit) ? null : "National ID must contain digits only.");
+        if (db.Customers.Any(c => c.NationalId == nationalId))
+        {
+            Error($"A customer with National ID '{nationalId}' already exists.");
+            return;
+        }
+
+        var dateOfBirth = ReadDate("Date of Birth  : (yyyy-MM-dd) ");
+
+        var email = ReadValidated("Email          : ", 150,
+            v => MailAddress.TryCreate(v, out var a) && a.Address == v ? null : "Please enter a valid email address.");
+
+        var phone = ReadValidated("Phone          : ", 20,
+            v => v.All(char.IsDigit) && v.Length is >= 10 and <= 15 ? null : "Phone must be 10-15 digits.");
+
+        var address = ReadRequired("Address        : ", 200);
+
+        var type = ReadEnum<CustomerType>("Customer Type:");
+
+        var customer = new Customer
+        {
+            FullName = fullName,
+            NationalId = nationalId,
+            DateOfBirth = dateOfBirth,
+            Email = email,
+            PhoneNumber = phone,
+            Address = address,
+            CustomerType = type
         };
 
-        db.Students.AddRange(students);
+        db.Customers.Add(customer);
         db.SaveChanges();
 
-        Console.WriteLine($"Seeded {students.Count} students.");
+        Console.WriteLine();
+        Success($"Customer created successfully. CustomerId = {customer.Id}");
     }
 
-    private static void SeedEnrollments(AppDbContext db)
+    private static void OpenAccount(AppDbContext db)
     {
-        if (db.Enrollments.Any())
+        Console.WriteLine("--- Open New Account ---");
+
+        var accountNumber = ReadRequired("Account Number : ", 20);
+        if (db.Accounts.Any(a => a.AccountNumber == accountNumber))
         {
-            Console.WriteLine("Enrollments already seeded, skipping.");
+            Error($"Account '{accountNumber}' already exists.");
             return;
         }
 
-        var ids = db.Students.ToDictionary(s => s.Email, s => s.Id);
-        if (ids.Count < 5)
+        var accountType = ReadEnum<AccountType>("Account Type:");
+        var branchCode = ReadRequired("Branch Code    : ", 10).ToUpperInvariant();
+        var customerId = ReadInt("Customer Id    : ", 1);
+        var role = ReadEnum<OwnershipType>("Ownership Role:");
+
+        Info($"Validating branch '{branchCode}' and customer #{customerId}...");
+
+        var branch = db.Branches.Find(branchCode);
+        if (branch == null)
         {
-            Console.WriteLine("Not enough students to seed enrollments.");
+            Error($"Branch '{branchCode}' does not exist.");
             return;
         }
 
-        int omar = ids["omar.khaled@mail.com"];
-        int mariam = ids["mariam.adel@mail.com"];
-        int youssef = ids["youssef.samir@mail.com"];
-        int nour = ids["nour.hany@mail.com"];
-        int karim = ids["karim.mostafa@mail.com"];
-
-        var enrollments = new List<Enrollment>
+        var customer = db.Customers.Find(customerId);
+        if (customer == null)
         {
-            new()
-            {
-                StudentId = omar, CourseId = 1, EnrolledAt = new DateTime(2025, 4, 1), Progress = 40,
-                Status = EnrollmentStatus.Active
-            },
-            new()
-            {
-                StudentId = mariam, CourseId = 4, EnrolledAt = new DateTime(2025, 5, 10), Progress = 65,
-                Status = EnrollmentStatus.Active
-            },
-            new()
-            {
-                StudentId = nour, CourseId = 6, EnrolledAt = new DateTime(2025, 6, 2), Progress = 10,
-                Status = EnrollmentStatus.Active
-            },
+            Error($"Customer #{customerId} does not exist.");
+            return;
+        }
 
-            new()
-            {
-                StudentId = omar, CourseId = 2, EnrolledAt = new DateTime(2025, 2, 15), Progress = 100,
-                Status = EnrollmentStatus.Completed, FinalGrade = 92.50m
-            },
-            new()
-            {
-                StudentId = youssef, CourseId = 1, EnrolledAt = new DateTime(2025, 3, 20), Progress = 100,
-                Status = EnrollmentStatus.Completed, FinalGrade = 85.00m
-            },
-            new()
-            {
-                StudentId = karim, CourseId = 2, EnrolledAt = new DateTime(2025, 2, 1), Progress = 100,
-                Status = EnrollmentStatus.Completed, FinalGrade = 78.25m
-            },
-
-            new()
-            {
-                StudentId = mariam, CourseId = 2, EnrolledAt = new DateTime(2025, 3, 5), Progress = 20,
-                Status = EnrollmentStatus.Dropped
-            },
-            new()
-            {
-                StudentId = karim, CourseId = 6, EnrolledAt = new DateTime(2025, 6, 15), Progress = 5,
-                Status = EnrollmentStatus.Dropped
-            },
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        var account = new Account
+        {
+            AccountNumber = accountNumber,
+            AccountType = accountType,
+            CurrentBalance = 0,
+            OpeningDate = today,
+            BranchCode = branch.Code
         };
 
-        db.Enrollments.AddRange(enrollments);
+        account.CustomerAccounts.Add(new CustomerAccount
+        {
+            CustomerId = customer.Id,
+            OwnershipType = role,
+            OwnershipStartDate = today,
+            AccountStatus = AccountStatus.Active
+        });
+
+        db.Accounts.Add(account);
         db.SaveChanges();
 
-        Console.WriteLine($"Seeded {enrollments.Count} enrollments.");
+        Success($"Account '{accountNumber}' created and linked to customer {customer.Id} as {role} owner.");
+    }
+
+    private static void UpdateAccountStatus(AppDbContext db)
+    {
+        Console.WriteLine("--- Update Account Status ---");
+
+        var accountNumber = ReadRequired("Account Number : ", 20);
+        var customerId = ReadInt("Customer Id    : ", 1);
+
+        var link = db.CustomerAccounts.Find(customerId, accountNumber);
+        if (link == null)
+        {
+            Error($"Customer #{customerId} is not an owner of account '{accountNumber}'.");
+            return;
+        }
+
+        Info($"Current status: {link.AccountStatus}");
+        var newStatus = ReadEnum<AccountStatus>("New Status:");
+
+        if (newStatus == link.AccountStatus)
+        {
+            Info($"Status is already {newStatus}. Nothing changed.");
+            return;
+        }
+
+        link.AccountStatus = newStatus;
+        db.SaveChanges();
+
+        Success($"Status updated to {newStatus}.");
+    }
+
+    private static void RemoveAccountFromCustomer(AppDbContext db)
+    {
+        Console.WriteLine("--- Remove Account From Customer ---");
+
+        var accountNumber = ReadRequired("Account Number : ", 20);
+        var customerId = ReadInt("Customer Id    : ", 1);
+
+        var link = db.CustomerAccounts.Find(customerId, accountNumber);
+        if (link == null)
+        {
+            Error($"Customer #{customerId} is not an owner of account '{accountNumber}'.");
+            return;
+        }
+
+        var otherOwners = db.CustomerAccounts
+            .Count(ca => ca.AccountNumber == accountNumber && ca.CustomerId != customerId);
+
+        db.CustomerAccounts.Remove(link);
+
+        if (otherOwners == 0)
+        {
+            var account = db.Accounts.Find(accountNumber);
+            if (account != null)
+                db.Accounts.Remove(account);
+        }
+
+        db.SaveChanges();
+
+        Console.WriteLine();
+        Success("  Ownership link deleted.");
+        if (otherOwners == 0)
+            Info($"      That was the last owner - account '{accountNumber}' was also removed.");
+        else
+            Info($"      Account '{accountNumber}' still has {otherOwners} other owner(s).");
+    }
+
+    private static void ListCustomers(AppDbContext db)
+    {
+        Console.WriteLine("--- All Customers ---");
+        Console.WriteLine();
+
+        var customers = db.Customers
+            .AsNoTracking()
+            .Include(c => c.CustomerAccounts)
+                .ThenInclude(ca => ca.Account)
+                    .ThenInclude(a => a.Branch)
+            .OrderBy(c => c.Id)
+            .ToList();
+
+        if (customers.Count == 0)
+        {
+            Console.WriteLine("  (no customers)");
+            return;
+        }
+
+        foreach (var c in customers)
+        {
+            Console.WriteLine($"  #{c.Id} {c.FullName} ({c.CustomerType})");
+
+            if (c.CustomerAccounts.Count == 0)
+            {
+                Console.WriteLine("      (no accounts)");
+                continue;
+            }
+
+            foreach (var ca in c.CustomerAccounts.OrderBy(ca => ca.AccountNumber))
+            {
+                var a = ca.Account;
+                Console.WriteLine(
+                    $"      {a.AccountNumber,-10} {a.AccountType,-9} Balance: {a.CurrentBalance.ToString("N2", CultureInfo.InvariantCulture),12}   " +
+                    $"{ca.OwnershipType,-9} {ca.AccountStatus,-7} @ {a.Branch.Name}");
+            }
+        }
+    }
+
+    private static string ReadLine()
+        => Console.ReadLine() ?? throw new EndOfStreamException();
+
+    private static string ReadRequired(string prompt, int maxLength)
+        => ReadValidated(prompt, maxLength, _ => null);
+
+    private static string ReadValidated(string prompt, int maxLength, Func<string, string?> validate)
+    {
+        while (true)
+        {
+            Console.Write(prompt);
+            var input = ReadLine().Trim();
+
+            if (input.Length == 0)
+            {
+                Error("This field is required.");
+                continue;
+            }
+
+            if (input.Length > maxLength)
+            {
+                Error($"Must be at most {maxLength} characters.");
+                continue;
+            }
+
+            var error = validate(input);
+            if (error != null)
+            {
+                Error(error);
+                continue;
+            }
+
+            return input;
+        }
+    }
+
+    private static int ReadInt(string prompt, int min, int max = int.MaxValue)
+    {
+        while (true)
+        {
+            Console.Write(prompt);
+            var input = ReadLine().Trim();
+
+            if (!int.TryParse(input, out var value))
+            {
+                Error("Please enter a whole number.");
+                continue;
+            }
+
+            if (value < min || value > max)
+            {
+                Error(max == int.MaxValue
+                    ? $"Please enter a number of at least {min}."
+                    : $"Please enter a number between {min} and {max}.");
+                continue;
+            }
+
+            return value;
+        }
+    }
+
+    private static DateOnly ReadDate(string prompt)
+    {
+        var today = DateOnly.FromDateTime(DateTime.Today);
+
+        while (true)
+        {
+            Console.Write(prompt);
+            var input = ReadLine().Trim();
+
+            if (!DateOnly.TryParseExact(input, "yyyy-MM-dd", CultureInfo.InvariantCulture,
+                    DateTimeStyles.None, out var date))
+            {
+                Error("Please use the format yyyy-MM-dd (e.g. 2000-01-25).");
+                continue;
+            }
+
+            if (date > today || date.Year < 1900)
+            {
+                Error("Date must be between 1900-01-01 and today.");
+                continue;
+            }
+
+            return date;
+        }
+    }
+
+    private static T ReadEnum<T>(string title) where T : struct, Enum
+    {
+        var values = Enum.GetValues<T>();
+
+        Console.WriteLine(title);
+        for (var i = 0; i < values.Length; i++)
+            Console.WriteLine($"    {i + 1}) {values[i]}");
+
+        var choice = ReadInt("  Choice: ", 1, values.Length);
+        return values[choice - 1];
+    }
+
+    private static void Pause()
+    {
+        Console.WriteLine();
+        Console.Write("Press any key to return to the menu...");
+        try
+        {
+            Console.ReadKey(intercept: true);
+        }
+        catch (InvalidOperationException)
+        {
+            ReadLine();
+        }
+    }
+
+    private static void Success(string message) => WriteColored(message, ConsoleColor.Green);
+    private static void Info(string message) => WriteColored(message, ConsoleColor.Cyan);
+    private static void Error(string message) => WriteColored(message, ConsoleColor.Red);
+
+    private static void WriteColored(string message, ConsoleColor color)
+    {
+        Console.ForegroundColor = color;
+        Console.WriteLine(message);
+        Console.ResetColor();
     }
 }
